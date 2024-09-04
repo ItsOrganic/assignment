@@ -1,27 +1,27 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
-
-	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	r := gin.Default()
-	r.POST("/", Handler)
-	r.Run(":8080")
+	http.HandleFunc("/", Handler)
+	http.ListenAndServe(":8080", nil)
 }
 
-func Handler(c *gin.Context) {
+func Handler(w http.ResponseWriter, r *http.Request) {
 	var numbers []int32
-	if err := c.BindJSON(&numbers); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid json body"})
-		return
+	err := json.NewDecoder(r.Body).Decode(&numbers)
+	if err != nil {
+		http.Error(w, "invalid json", http.StatusBadRequest)
 	}
 	var res int32
 
 	for _, num := range numbers {
 		res += num
 	}
-	c.JSON(http.StatusOK, gin.H{"result": res})
+	w.Header().Set("Content-Type", "application/json")
+	fmt.Fprint(w, res)
 }
